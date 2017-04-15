@@ -1,5 +1,3 @@
-diceTest
-*.o
+octave-workspace
 *.pyc
 *.txt
-*anjuta*
