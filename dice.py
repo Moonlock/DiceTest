@@ -40,7 +40,7 @@ class Die:
 
 	def testDie(self):
 		pValue = getPValue(self.getChiSquare())
-		if pValue[1] <= 0.5:
+		if pValue[1] <= 0.05:
 			print(self.name + " - Die seems to be rigged.  " +
 				"( " + str(pValue[0]) + " > p > " + str(pValue[1]) + " )")
 		else:
@@ -82,7 +82,7 @@ class DiceSet:
 		rTotal = 0
 		yTotal = 0
 		print("    " + self.redDie.name + "\t\t\t    " + self.yellowDie.name)
-		
+
 		for i in range(6):
 			rPercent = round(float(self.redDie.rolls[i]) / float(self.numRolls) * 100, 2)
 			yPercent = round(float(self.yellowDie.rolls[i]) / float(self.numRolls) * 100, 2)

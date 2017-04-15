@@ -1,6 +1,8 @@
 from player import Player
 from dice import DiceSet
+
 from oct2py import octave
+from blessings import Terminal
 
 # Fix input() vs raw_input() mess
 try: input = raw_input
@@ -53,34 +55,44 @@ def getDieValue(dieString):
 	return dieVal
 
 def isCommand(command):
-	return command in ['help', 'h', 'c', 's', 'g', 'cp', 'sp', \
-					   'gp', 'pc', 'ps', 'pg', 'q', 'quit']
+	return command in ['help', 'combined', 'separate', 'graph', 'quit', \
+					   'h', 'c', 's', 'g', 'q']
 
 def parseCommand(command, playerName=""):
-	if (command == 'h') or (command == 'help') or (command == '?'): displayHelp()
-	elif command == 'c': dice.displayCombined()
-	elif command == 's': dice.displaySeparately()
-	elif command == 'g': graphResults()
-	elif (command == 'cp') or (command == 'pc'): displayPlayerCombined(playerName)
-	elif (command == 'sp') or (command == 'ps'): displayPlayerSeparately(playerName)
-	elif (command == 'gp') or (command == 'pg'): graphPlayer(playerName)
+	if (command == 'h') or (command == 'help'): displayHelp()
+	elif (command == 'c') or (command == 'combined'): displayCombined(playerName)
+	elif (command == 's') or (command == 'separate'): displaySeparately(playerName)
+	elif (command == 'g') or (command == 'graph'): graphResults(playerName)
 	elif (command == 'q') or (command == 'quit'): end()
 
 def displayHelp():
+	term = Terminal()
+
 	print("")
 	print("Commands:")
-	print("	h	Display this help message")
-	print("	c	Results of both dice combined")
-	print("	s	Results of dice separately")
-	print("	g	Graph results")
-	print("			")
-	print("	q	Proceed to statistical analysis")
+	print("	" + term.underline("h") + "elp				" +
+		"Display this help message")
+	print("")
+	print("	" + term.underline("c") + "ombined [player | 'all']" +
+		"	Results of both dice combined")
+	print("	" + term.underline("s") + "eparate [player | 'all']" +
+		"	Results of dice separately")
+	print("	" + term.underline("g") + "raph    [player | 'all']" +
+		"	Graph results")
+	print("")
+	print("	" + term.underline("n") + "ext				" +
+		"Skip current player's turn")
+	print("")
+	print("	" + term.underline("q") + "uit				" +
+		"Proceed to statistical analysis")
+	print("")
 
-def graphResults():
-	dice.graphResults()
-
-def displayPlayerCombined(playerName):
+def displayCombined(playerName=""):
 	if not playerName:
+		dice.displayCombined()
+		return
+
+	if playerName == 'all':
 		displayAllCombined()
 		return
 
@@ -90,8 +102,12 @@ def displayPlayerCombined(playerName):
 
 	print("Idiot.")
 
-def displayPlayerSeparately(playerName):
+def displaySeparately(playerName=""):
 	if not playerName:
+		dice.displaySeparately()
+		return
+
+	if playerName == 'all':
 		displayAllSeparately()
 		return
 
@@ -101,8 +117,12 @@ def displayPlayerSeparately(playerName):
 
 	print("Idiot.")
 
-def graphPlayer(playerName):
+def graphResults(playerName=""):
 	if not playerName:
+		dice.graphResults()
+		return
+
+	if playerName == 'all':
 		graphAllPlayers()
 		return
 
