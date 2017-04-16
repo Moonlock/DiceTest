@@ -58,11 +58,11 @@ def isCommand(command):
 	return command in ['help', 'combined', 'separate', 'graph', 'quit', \
 					   'h', 'c', 's', 'g', 'q']
 
-def parseCommand(command, playerName=""):
+def parseCommand(command, arg=""):
 	if (command == 'h') or (command == 'help'): displayHelp()
-	elif (command == 'c') or (command == 'combined'): displayCombined(playerName)
-	elif (command == 's') or (command == 'separate'): displaySeparately(playerName)
-	elif (command == 'g') or (command == 'graph'): graphResults(playerName)
+	elif (command == 'c') or (command == 'combined'): displayCombined(arg)
+	elif (command == 's') or (command == 'separate'): displaySeparately(arg)
+	elif (command == 'g') or (command == 'graph'): graphOrChangeSettings(arg)
 	elif (command == 'q') or (command == 'quit'): end()
 
 def displayHelp():
@@ -79,6 +79,8 @@ def displayHelp():
 		"	Results of dice separately")
 	print("	" + term.underline("g") + "raph    [player | 'all']" +
 		"	Graph results")
+	print("	" + term.underline("g") + "raph    ['on' | 'off']" +
+		"	Update graph after every roll")
 	print("")
 	print("	" + term.underline("n") + "ext				" +
 		"Skip current player's turn")
@@ -117,9 +119,24 @@ def displaySeparately(playerName=""):
 
 	print("Idiot.")
 
+def graphOrChangeSettings(arg=""):
+	global graphingOn
+
+	if arg == 'on':
+		graphingOn = True
+		return
+	if arg == 'off':
+		graphingOn = False
+		return
+
+	graphResults(arg)
+
 def graphResults(playerName=""):
+	global currentGraphArg
+	currentGraphArg = playerName
+
 	if not playerName:
-		dice.graphResults()
+		dice.graphResults("All Rolls")
 		return
 
 	if playerName == 'all':
@@ -136,12 +153,14 @@ def graphAllPlayers():
 	rMatrix = []
 	yMatrix = []
 	cMatrix = []
+	nameMatrix = []
 	for player in players:
 		rMatrix.append(player.dice.redDie.rolls)
 		yMatrix.append(player.dice.yellowDie.rolls)
 		cMatrix.append(player.dice.rolls)
+		nameMatrix.append(player.name)
 
-	octave.histogram(rMatrix, yMatrix, cMatrix)
+	octave.histogram(rMatrix, yMatrix, cMatrix, "Rolls For All Players", nameMatrix)
 
 def isPlayer(playerName):
 	for player in players:
@@ -168,6 +187,13 @@ def end():
 
 
 
+def updateGraph():
+	if graphingOn:
+		if isPlayer(currentGraphArg): 
+			graphResults(player.name.lower())
+		else:
+			graphResults(currentGraphArg)
+
 preventYakov()
 numPlayers = getNumPlayers()
 
@@ -177,6 +203,8 @@ for player in range(numPlayers):
 	players.append(Player(name))
 
 dice = DiceSet()
+graphingOn = False
+currentGraphArg = ""
 
 print("")
 print("(Type 'h' to list all commands)")
@@ -184,6 +212,8 @@ print("Enter dice; red then yellow:")
 
 while(True):
 	for player in players:
+		updateGraph()
+
 		successful = False
 		while not successful:
 			inputs = input(

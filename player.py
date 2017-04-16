@@ -18,5 +18,5 @@ class Player:
 		self.dice.displaySeparately()
 
 	def graphResults(self):
-		self.dice.graphResults()
+		self.dice.graphResults("Rolls For " + self.name)
 

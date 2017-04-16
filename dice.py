@@ -4,19 +4,21 @@ def getPValue(chiSquare):
 	if chiSquare <= 1.61:
 		return [0.9, 1]
 	if chiSquare <= 2.675:
-		return [0.75, 0.9];
+		return [0.75, 0.9]
 	if chiSquare <= 4.351:
-		return [0.50, 0.75];
+		return [0.50, 0.75]
 	if chiSquare <= 6.626:
-		return [0.25, 0.5];
+		return [0.25, 0.5]
 	if chiSquare <= 9.236:
-		return [0.1, 0.25];
+		return [0.1, 0.25]
 	if chiSquare <= 11.07:
-		return [0.05, 0.1];
+		return [0.05, 0.1]
 	if chiSquare <= 12.83:
-		return [0.025, 0.05];
+		return [0.025, 0.05]
 	if chiSquare <= 15.086:
-		return [0.01, 0.025];
+		return [0.01, 0.025]
+
+	return [0, 0.01]
 
 class Die:
 
@@ -65,6 +67,9 @@ class DiceSet:
 
 	def displayCombined(self):
 		total = 0
+		self.numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
+
+		print("")
 		for i in range(11):
 			percent = float(self.rolls[i]) / float(self.numRolls) * 100
 			percent = round(percent, 2)
@@ -81,6 +86,9 @@ class DiceSet:
 	def displaySeparately(self):
 		rTotal = 0
 		yTotal = 0
+		self.numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
+
+		print("")
 		print("    " + self.redDie.name + "\t\t\t    " + self.yellowDie.name)
 
 		for i in range(6):
@@ -102,8 +110,8 @@ class DiceSet:
 			"\t\tAverage: " + str(yAverage))
 		print("")
 
-	def graphResults(self):
-		octave.histogram(self.redDie.rolls, self.yellowDie.rolls, self.rolls)
+	def graphResults(self, title):
+		octave.histogram(self.redDie.rolls, self.yellowDie.rolls, self.rolls, title)
 
 	def testDice(self):
 		print("")
