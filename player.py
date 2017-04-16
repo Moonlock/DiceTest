@@ -20,3 +20,5 @@ class Player:
 	def graphResults(self):
 		self.dice.graphResults("Rolls For " + self.name)
 
+	def toDict(self):
+		return {'name': self.name, 'dice': self.dice.toDict()}

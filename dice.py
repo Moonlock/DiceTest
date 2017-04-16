@@ -28,6 +28,8 @@ class Die:
 		self.numRolls = 0
 
 	def getChiSquare(self):
+		self.numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
+
 		expected = float(self.numRolls) / 6.0
 
 		chiSquare = 0.0
@@ -48,6 +50,9 @@ class Die:
 		else:
 			print(self.name + " - Die does not seem to be rigged.  " +
 				"( " + str(pValue[0]) + " > p > " + str(pValue[1]) + " )")
+
+	def toDict(self):
+		return {'name': self.name, 'rolls': self.rolls}
 
 
 class DiceSet:
@@ -118,3 +123,7 @@ class DiceSet:
 		self.displaySeparately()
 		self.redDie.testDie()
 		self.yellowDie.testDie()
+
+	def toDict(self):
+		return {'rolls': self.rolls,
+			'redDie': self.redDie.toDict(), 'yellowDie': self.yellowDie.toDict()}

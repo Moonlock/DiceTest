@@ -3,6 +3,10 @@ from dice import DiceSet
 
 from oct2py import octave
 from blessings import Terminal
+from datetime import datetime
+
+import os
+import json
 
 # Fix input() vs raw_input() mess
 try: input = raw_input
@@ -47,6 +51,14 @@ def getNumPlayers():
 			return numPlayers
 		except ValueError:
 			print("Idiot.")
+
+def updateGraph():
+	if graphingOn:
+		if isPlayer(currentGraphArg): 
+			graphResults(player.name.lower())
+		else:
+			graphResults(currentGraphArg)
+
 
 def getDieValue(dieString):
 	dieVal = int(dieString)
@@ -183,16 +195,74 @@ def displayAllSeparately():
 
 def end():
 	dice.testDice()
+
+	response = input("Save these results? ").lower()
+	while not (response == 'n' or response == 'no'):
+		if response == 'y' or response == 'yes':
+			saveResults()
+			break
+		response = input("Save these results? [y/n] ").lower()
+
 	exit()
 
+def saveResults():
+	gameName = getGameDirectory()
+	f = getFile(gameName)
+
+	results = {"dice": dice.toDict(), "players": [player.toDict() for player in players]}
+	json.dump(results, f)
+	
+def getGameDirectory():
+	print("")
+
+	games = os.listdir('data')
+	if not games:
+		print("No game directories found, creating a new one.")
+		gameName = input("Please enter game name: ")
+		os.makedirs('data/' + gameName)
+		return gameName
+
+	i = 0
+	for game in games:
+		print(str(i) + ") " + game)
+		i += 1
+	print(str(i) + ") [new]")
+	print("")
+
+	while(True):
+		choice = input("Choose a game to add results to: ")
+		try:
+			choice = int(choice)
+			if choice < 0 or choice > i:
+				raise ValueError
+		except ValueError:
+			print("Idiot.")
+			continue
+		break
+
+	if choice == i:
+		gameName = input("Please enter game name: ")
+		os.makedirs('data/' + gameName)
+	else:
+		gameName = games[choice]
+
+	return gameName
+
+def getFile(gameName):
+	now = datetime.now()
+	baseFilename = str(now.year) + "-" + str(now.month) + "-" + str(now.day)
+
+	i = 1
+	filename = baseFilename + ".txt"
+	while os.path.exists("data/" + gameName + "/" + filename):
+		filename = baseFilename + "_" + str(i) + ".txt"
+		i += 1
+
+	return file("data/" + gameName + "/" + filename, 'w')
 
 
-def updateGraph():
-	if graphingOn:
-		if isPlayer(currentGraphArg): 
-			graphResults(player.name.lower())
-		else:
-			graphResults(currentGraphArg)
+
+
 
 preventYakov()
 numPlayers = getNumPlayers()
