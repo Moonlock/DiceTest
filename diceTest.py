@@ -29,6 +29,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """)
 
+class ComparisonGroup:
+
+	def __init__(self):
+		self.dice = DiceSet()
+		self.players = []
+
 def preventYakov():
 	response = input("Are you Yakov? ").lower()
 	while not (response == 'n' or response == 'no'):
@@ -42,6 +48,56 @@ def preventYakov():
 			exit()
 		response = input("Are you lying? [y/n] ").lower()
 
+def promptToLoad():
+	response = input("Load data or start a new game? [l/n] ").lower()
+	while not (response == 'n' or response == 'new'):
+		if response == 'l' or response == 'load':
+			loadData()
+			start()
+		response = input("Load data or start a new game? [l/n] ").lower()
+
+def loadData():
+	gameName = chooseFromDir('data', "Choose a game: ")
+	filename = chooseFromDir('data/' + gameName, "Choose a file: ")
+	
+	f = file('data/' + gameName + '/' + filename, 'r')
+	data = json.load(f)
+
+	env.dice = DiceSet.loadFromDict(data['dice'])
+
+	for player in data['players']:
+		env.players.append(Player.loadFromDict(player))
+
+	end(False)
+
+
+def chooseFromDir(directory, prompt):
+	print("")
+
+	options = os.listdir(directory)
+	if not options:
+		print("No data found.")
+		exit()
+
+	i = 0
+	for option in options:
+		print(str(i) + ") " + option)
+		i += 1
+	print("")
+
+	while(True):
+		choice = input(prompt)
+		try:
+			choice = int(choice)
+			if choice < 0 or choice > i-1:
+				raise ValueError
+		except ValueError:
+			print("Idiot.")
+			continue
+		break
+
+	return options[choice]
+
 def getNumPlayers():
 	while(True):
 		numPlayers = input("How many players? ")
@@ -54,7 +110,7 @@ def getNumPlayers():
 
 def updateGraph():
 	if graphingOn:
-		if isPlayer(currentGraphArg): 
+		if isPlayer(currentGraphArg):
 			graphResults(player.name.lower())
 		else:
 			graphResults(currentGraphArg)
@@ -75,7 +131,7 @@ def parseCommand(command, arg=""):
 	elif (command == 'c') or (command == 'combined'): displayCombined(arg)
 	elif (command == 's') or (command == 'separate'): displaySeparately(arg)
 	elif (command == 'g') or (command == 'graph'): graphOrChangeSettings(arg)
-	elif (command == 'q') or (command == 'quit'): end()
+	elif (command == 'q') or (command == 'quit'): end(True)
 
 def displayHelp():
 	term = Terminal()
@@ -103,7 +159,7 @@ def displayHelp():
 
 def displayCombined(playerName=""):
 	if not playerName:
-		dice.displayCombined()
+		env.dice.displayCombined()
 		return
 
 	if playerName == 'all':
@@ -118,7 +174,7 @@ def displayCombined(playerName=""):
 
 def displaySeparately(playerName=""):
 	if not playerName:
-		dice.displaySeparately()
+		env.dice.displaySeparately()
 		return
 
 	if playerName == 'all':
@@ -148,7 +204,7 @@ def graphResults(playerName=""):
 	currentGraphArg = playerName
 
 	if not playerName:
-		dice.graphResults("All Rolls")
+		env.dice.graphResults("All Rolls")
 		return
 
 	if playerName == 'all':
@@ -166,7 +222,7 @@ def graphAllPlayers():
 	yMatrix = []
 	cMatrix = []
 	nameMatrix = []
-	for player in players:
+	for player in env.players:
 		rMatrix.append(player.dice.redDie.rolls)
 		yMatrix.append(player.dice.yellowDie.rolls)
 		cMatrix.append(player.dice.rolls)
@@ -175,43 +231,46 @@ def graphAllPlayers():
 	octave.histogram(rMatrix, yMatrix, cMatrix, "Rolls For All Players", nameMatrix)
 
 def isPlayer(playerName):
-	for player in players:
+	for player in env.players:
 		if player.name.lower() == playerName:
 			return True
 	return False
 
 def getPlayer(playerName):
-	for player in players:
+	for player in env.players:
 		if player.name.lower() == playerName:
 			return player
 
 def displayAllCombined():
-	for player in players:
+	for player in env.players:
 		player.displayCombined()
 
 def displayAllSeparately():
-	for player in players:
+	for player in env.players:
 		player.displaySeparately()
 
-def end():
-	dice.testDice()
+def end(promptToSave):
+	global finished
+	if finished: exit()
+	finished = True
 
-	response = input("Save these results? ").lower()
-	while not (response == 'n' or response == 'no'):
-		if response == 'y' or response == 'yes':
-			saveResults()
-			break
-		response = input("Save these results? [y/n] ").lower()
+	env.dice.testDice()
 
-	exit()
+	if promptToSave:
+		response = input("Save these results? ").lower()
+		while not (response == 'n' or response == 'no'):
+			if response == 'y' or response == 'yes':
+				saveResults()
+				break
+			response = input("Save these results? [y/n] ").lower()
 
 def saveResults():
 	gameName = getGameDirectory()
 	f = getFile(gameName)
 
-	results = {"dice": dice.toDict(), "players": [player.toDict() for player in players]}
+	results = {"dice": env.dice.toDict(), "players": [player.toDict() for player in env.players]}
 	json.dump(results, f)
-	
+
 def getGameDirectory():
 	print("")
 
@@ -239,6 +298,7 @@ def getGameDirectory():
 			print("Idiot.")
 			continue
 		break
+	print("Results saved.")
 
 	if choice == i:
 		gameName = input("Please enter game name: ")
@@ -260,64 +320,75 @@ def getFile(gameName):
 
 	return file("data/" + gameName + "/" + filename, 'w')
 
+def getPrompt(player):
+	if finished:
+		return " > "
+	else:
+		return "Roll " + str(env.dice.numRolls+1) + " - " + player.name + " > "
 
+def handleInput(inputs, player):
+	if len(inputs) > 2 or len(inputs) == 0:
+		print("Idiot.")
+		return False
 
+	command = inputs[0]
+	arg = inputs[1] if len(inputs) == 2 else ""
 
+	if isCommand(command):
+		parseCommand(command, arg)
+		return False
+	elif finished:
+		print("Idiot.")
+		return False
+
+	if command == 'n' or command == 'next':
+		return True
+
+	try:
+		red = getDieValue(command)
+		yellow = getDieValue(arg)
+	except ValueError:
+		print("Idiot.")
+		return False
+	
+	player.addRoll(red, yellow)
+	env.dice.addRoll(red, yellow)
+
+	env.dice.displayCombined()
+	return True
+
+def setup():
+	numPlayers = getNumPlayers()
+
+	for player in range(numPlayers):
+		name = input("Player " + str(player) + " name: ")
+		env.players.append(Player(name))
+
+	print("")
+	print("(Type 'h' to list all commands)")
+	print("Enter dice; red then yellow:")
+
+def start():
+	while(True):
+		for player in env.players:
+			updateGraph()
+
+			successful = False
+			while not successful:
+				inputs = input(getPrompt(player)).lower().split(" ")
+				successful = handleInput(inputs, player)
+
+finished = False
+env = ComparisonGroup()
+currentGraphArg = ""
+graphingOn = False
 
 preventYakov()
-numPlayers = getNumPlayers()
+promptToLoad()
+setup()
+start()
 
-players = []
-for player in range(numPlayers):
-	name = input("Player " + str(player) + " name: ")
-	players.append(Player(name))
 
-dice = DiceSet()
-graphingOn = False
-currentGraphArg = ""
 
-print("")
-print("(Type 'h' to list all commands)")
-print("Enter dice; red then yellow:")
 
-while(True):
-	for player in players:
-		updateGraph()
 
-		successful = False
-		while not successful:
-			inputs = input(
-				"Roll " + str(dice.numRolls+1) + " - " + 
-				player.name + " > ").lower().split(" ")
-
-			if len(inputs) > 2 or len(inputs) == 0:
-				print("Idiot.")
-				continue
-
-			if len(inputs) == 1:
-				if inputs[0] == 'n' or inputs[0] == 'next':
-					successful = True
-					continue
-				if isCommand(inputs[0]):
-					parseCommand(inputs[0])
-				else:
-					print("Idiot")
-				continue
-
-			if isCommand(inputs[0]):
-				parseCommand(inputs[0], inputs[1])
-				continue
-
-			try:
-				red = getDieValue(inputs[0])
-				yellow = getDieValue(inputs[1])
-			except ValueError:
-				print("Idiot.")
-				continue
-			
-			player.addRoll(red, yellow)
-			dice.addRoll(red, yellow)
-
-			dice.displayCombined()
-			successful = True
-			continue

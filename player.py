@@ -22,3 +22,9 @@ class Player:
 
 	def toDict(self):
 		return {'name': self.name, 'dice': self.dice.toDict()}
+
+	@classmethod
+	def loadFromDict(cls, data):
+		player = cls(data['name'])
+		player.dice = DiceSet.loadFromDict(data['dice'])
+		return player

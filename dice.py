@@ -54,6 +54,12 @@ class Die:
 	def toDict(self):
 		return {'name': self.name, 'rolls': self.rolls}
 
+	@classmethod
+	def loadFromDict(cls, data):
+		die = cls(data['name'])
+		die.rolls = data['rolls']
+		die.numRolls = sum(die.rolls)
+		return die
 
 class DiceSet:
 
@@ -127,3 +133,12 @@ class DiceSet:
 	def toDict(self):
 		return {'rolls': self.rolls,
 			'redDie': self.redDie.toDict(), 'yellowDie': self.yellowDie.toDict()}
+
+	@classmethod
+	def loadFromDict(cls, data):
+		dice = DiceSet()
+		dice.redDie = Die.loadFromDict(data['redDie'])
+		dice.yellowDie = Die.loadFromDict(data['yellowDie'])
+		dice.rolls = data['rolls']
+		dice.numRolls = sum(dice.rolls)
+		return dice
