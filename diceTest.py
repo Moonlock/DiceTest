@@ -31,7 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class ComparisonGroup:
 
-	def __init__(self):
+	def __init__(self, name):
+		self.name = name
 		self.dice = DiceSet()
 		self.players = []
 
@@ -56,6 +57,26 @@ def promptToLoad():
 			start()
 		response = input("Load data or start a new game? [l/n] ").lower()
 
+def loadGroup():
+	group = chooseGroup()
+
+	gameName = chooseFromDir('data', "Choose a game: ")
+	filename = chooseFromDir('data/' + gameName, "File to load into " + group.name + ": ")
+	
+	f = file('data/' + gameName + '/' + filename, 'r')
+	data = json.load(f)
+
+	group.dice.addFromDict(data['dice'])
+
+	for dataPlayer in data['players']:
+		found = False
+		for groupPlayer in group.players:
+			if dataPlayer['name'] == groupPlayer.name:
+				groupPlayer.addFromDict(dataPlayer)
+				found = True
+		if not found:
+			group.players.append(Player.loadFromDict(dataPlayer))
+
 def loadData():
 	gameName = chooseFromDir('data', "Choose a game: ")
 	filename = chooseFromDir('data/' + gameName, "Choose a file: ")
@@ -69,7 +90,6 @@ def loadData():
 		env.players.append(Player.loadFromDict(player))
 
 	end(False)
-
 
 def chooseFromDir(directory, prompt):
 	print("")
@@ -98,6 +118,30 @@ def chooseFromDir(directory, prompt):
 
 	return options[choice]
 
+def chooseGroup():
+	i = 0
+	for group in groups:
+		print(str(i) + ") " + group.name)
+		i += 1
+	print(str(i) + ") [new]")
+	print("")
+
+	while(True):
+		choice = input("Select a group: ")
+		try:
+			choice = int(choice)
+			if choice < 0 or choice > i:
+				raise ValueError
+		except ValueError:
+			print("Idiot.")
+			continue
+		break
+
+	if choice == i:
+		name = input("Group name: ")
+		groups.append(ComparisonGroup(name))
+	return groups[choice]
+
 def getNumPlayers():
 	while(True):
 		numPlayers = input("How many players? ")
@@ -123,8 +167,8 @@ def getDieValue(dieString):
 	return dieVal
 
 def isCommand(command):
-	return command in ['help', 'combined', 'separate', 'graph', 'quit', \
-					   'h', 'c', 's', 'g', 'q']
+	return command in ['help', 'combined', 'separate', 'graph', 'quit', 'load'\
+					   'h', 'c', 's', 'g', 'q', 'l']
 
 def parseCommand(command, arg=""):
 	if (command == 'h') or (command == 'help'): displayHelp()
@@ -132,6 +176,7 @@ def parseCommand(command, arg=""):
 	elif (command == 's') or (command == 'separate'): displaySeparately(arg)
 	elif (command == 'g') or (command == 'graph'): graphOrChangeSettings(arg)
 	elif (command == 'q') or (command == 'quit'): end(True)
+	elif (command == 'l') or (command == 'load'): loadGroup()
 
 def displayHelp():
 	term = Terminal()
@@ -203,6 +248,10 @@ def graphResults(playerName=""):
 	global currentGraphArg
 	currentGraphArg = playerName
 
+	if len(groups) > 1:
+		graphGroups()
+		return
+
 	if not playerName:
 		env.dice.graphResults("All Rolls")
 		return
@@ -229,6 +278,19 @@ def graphAllPlayers():
 		nameMatrix.append(player.name)
 
 	octave.histogram(rMatrix, yMatrix, cMatrix, "Rolls For All Players", nameMatrix)
+
+def graphGroups():
+	rMatrix = []
+	yMatrix = []
+	cMatrix = []
+	nameMatrix = []
+	for group in groups:
+		rMatrix.append(group.dice.redDie.rolls)
+		yMatrix.append(group.dice.yellowDie.rolls)
+		cMatrix.append(group.dice.rolls)
+		nameMatrix.append(group.name)
+
+	octave.histogram(rMatrix, yMatrix, cMatrix, "Rolls For All Groups", nameMatrix, True)
 
 def isPlayer(playerName):
 	for player in env.players:
@@ -270,6 +332,7 @@ def saveResults():
 
 	results = {"dice": env.dice.toDict(), "players": [player.toDict() for player in env.players]}
 	json.dump(results, f)
+	print("Results saved.")
 
 def getGameDirectory():
 	print("")
@@ -298,7 +361,6 @@ def getGameDirectory():
 			print("Idiot.")
 			continue
 		break
-	print("Results saved.")
 
 	if choice == i:
 		gameName = input("Please enter game name: ")
@@ -379,7 +441,8 @@ def start():
 				successful = handleInput(inputs, player)
 
 finished = False
-env = ComparisonGroup()
+env = ComparisonGroup("Current")
+groups = [env]
 currentGraphArg = ""
 graphingOn = False
 

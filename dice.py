@@ -1,4 +1,5 @@
 from oct2py import octave
+import numpy
 
 def getPValue(chiSquare):
 	if chiSquare <= 1.61:
@@ -27,6 +28,20 @@ class Die:
 		self.name = name
 		self.numRolls = 0
 
+	@classmethod
+	def loadFromDict(cls, data):
+		die = cls(data['name'])
+		die.rolls = data['rolls']
+		die.numRolls = sum(die.rolls)
+		return die
+
+	def toDict(self):
+		return {'name': self.name, 'rolls': self.rolls}
+
+	def addFromDict(self, data):
+		self.rolls = numpy.add(self.rolls, data['rolls']).tolist()
+		self.numRolls = sum(self.rolls)
+
 	def getChiSquare(self):
 		self.numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
 
@@ -51,15 +66,6 @@ class Die:
 			print(self.name + " - Die does not seem to be rigged.  " +
 				"( " + str(pValue[0]) + " > p > " + str(pValue[1]) + " )")
 
-	def toDict(self):
-		return {'name': self.name, 'rolls': self.rolls}
-
-	@classmethod
-	def loadFromDict(cls, data):
-		die = cls(data['name'])
-		die.rolls = data['rolls']
-		die.numRolls = sum(die.rolls)
-		return die
 
 class DiceSet:
 
@@ -68,6 +74,25 @@ class DiceSet:
 		self.yellowDie = Die("YELLOW")
 		self.rolls = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		self.numRolls = 0
+
+	@classmethod
+	def loadFromDict(cls, data):
+		dice = DiceSet()
+		dice.redDie = Die.loadFromDict(data['redDie'])
+		dice.yellowDie = Die.loadFromDict(data['yellowDie'])
+		dice.rolls = data['rolls']
+		dice.numRolls = sum(dice.rolls)
+		return dice
+
+	def toDict(self):
+		return {'rolls': self.rolls,
+			'redDie': self.redDie.toDict(), 'yellowDie': self.yellowDie.toDict()}
+
+	def addFromDict(self, data):
+		self.redDie.addFromDict(data['redDie'])
+		self.yellowDie.addFromDict(data['yellowDie'])
+		self.rolls = numpy.add(self.rolls, data['rolls']).tolist()
+		self.numRolls = sum(self.rolls)
 
 	def addRoll(self, red, yellow):
 		self.redDie.addRoll(red)
@@ -130,15 +155,3 @@ class DiceSet:
 		self.redDie.testDie()
 		self.yellowDie.testDie()
 
-	def toDict(self):
-		return {'rolls': self.rolls,
-			'redDie': self.redDie.toDict(), 'yellowDie': self.yellowDie.toDict()}
-
-	@classmethod
-	def loadFromDict(cls, data):
-		dice = DiceSet()
-		dice.redDie = Die.loadFromDict(data['redDie'])
-		dice.yellowDie = Die.loadFromDict(data['yellowDie'])
-		dice.rolls = data['rolls']
-		dice.numRolls = sum(dice.rolls)
-		return dice
