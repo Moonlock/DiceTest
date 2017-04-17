@@ -440,6 +440,11 @@ def start():
 				inputs = input(getPrompt(player)).lower().split(" ")
 				successful = handleInput(inputs, player)
 
+
+
+if not os.path.exists("data"):
+	os.makedirs("data")
+
 finished = False
 env = ComparisonGroup("Current")
 groups = [env]
