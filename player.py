@@ -32,3 +32,7 @@ class Player:
 	def graphResults(self):
 		self.dice.graphResults("Rolls For " + self.name)
 
+	def testDice(self):
+		print("\t\t" + self.name + ":")
+		self.dice.testDice()
+

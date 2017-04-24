@@ -154,10 +154,7 @@ def getNumPlayers():
 
 def updateGraph():
 	if graphingOn:
-		if isPlayer(currentGraphArg):
-			graphResults(player.name.lower())
-		else:
-			graphResults(currentGraphArg)
+		graphResults(currentGraphArg)
 
 
 def getDieValue(dieString):
@@ -167,8 +164,8 @@ def getDieValue(dieString):
 	return dieVal
 
 def isCommand(command):
-	return command in ['help', 'combined', 'separate', 'graph', 'quit', 'load'\
-					   'h', 'c', 's', 'g', 'q', 'l']
+	return command in ['help', 'combined', 'separate', 'graph', 'quit', 'load', 'test',\
+					   'h', 'c', 's', 'g', 'q', 'l', 't']
 
 def parseCommand(command, arg=""):
 	if (command == 'h') or (command == 'help'): displayHelp()
@@ -177,6 +174,7 @@ def parseCommand(command, arg=""):
 	elif (command == 'g') or (command == 'graph'): graphOrChangeSettings(arg)
 	elif (command == 'q') or (command == 'quit'): end(True)
 	elif (command == 'l') or (command == 'load'): loadGroup()
+	elif (command == 't') or (command == 'test'): testDice(arg)
 
 def displayHelp():
 	term = Terminal()
@@ -291,6 +289,23 @@ def graphGroups():
 		nameMatrix.append(group.name)
 
 	octave.histogram(rMatrix, yMatrix, cMatrix, "Rolls For All Groups", nameMatrix, True)
+
+def testDice(playerName=""):
+	if not playerName:
+		env.dice.testDice()
+		return
+
+	if playerName == 'all':
+		for player in env.players: player.testDice()
+		return
+
+	if playerName == 'groups':
+		for group in groups: group.testDice()
+		return
+
+	if isPlayer(playerName):
+		getPlayer(playerName).testDice()
+		return
 
 def isPlayer(playerName):
 	for player in env.players:
@@ -433,6 +448,10 @@ def setup():
 def start():
 	while(True):
 		for player in env.players:
+			global currentGraphArg
+
+			if isPlayer(currentGraphArg):
+				currentGraphArg = player.name.lower()
 			updateGraph()
 
 			successful = False
@@ -449,7 +468,7 @@ finished = False
 env = ComparisonGroup("Current")
 groups = [env]
 currentGraphArg = ""
-graphingOn = False
+graphingOn = True
 
 preventYakov()
 promptToLoad()
