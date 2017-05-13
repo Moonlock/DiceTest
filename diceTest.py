@@ -1,12 +1,17 @@
-from player import Player
-from dice import DiceSet
-
-from oct2py import octave
-from blessings import Terminal
 from datetime import datetime
-
-import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import json
+import os
+import smtplib
+
+from blessings import Terminal
+from oct2py import octave
+
+import config
+from dice import DiceSet
+from player import Player
+
 
 # Fix input() vs raw_input() mess
 try: input = raw_input
@@ -340,14 +345,54 @@ def end(promptToSave):
 				saveResults()
 				break
 			response = input("Save these results? [y/n] ").lower()
+			
+		response = input("Email results? ").lower()
+		while not (response == 'n' or response == 'no'):
+			if response == 'y' or response == 'yes':
+				emailResults()
+				break
+			response = input("Email results? [y/n] ").lower()
 
 def saveResults():
+	global filename
 	gameName = getGameDirectory()
 	f = getFile(gameName)
-
+	filename = f.name
+	
 	results = {"dice": env.dice.toDict(), "players": [player.toDict() for player in env.players]}
 	json.dump(results, f)
 	print("Results saved.")
+	
+def emailResults():
+	mailserver = smtplib.SMTP(config.HOST, 587)
+	mailserver.ehlo()
+	mailserver.starttls()
+	mailserver.ehlo()
+	mailserver.login(config.ADDRESS, config.PASSWORD)
+	
+	addresses = []
+
+	print("Enter email addresses (blank line to end):")
+	response = input(" > ")
+	while response:
+		addresses.append(response)
+		response = input(" > ")
+
+	fp = file(filename)
+	data = fp.read()
+	attachment = MIMEText(data)
+	attachment.add_header('Content-Disposition', 'attachment', filename=filename)
+	fp.close()
+
+	msg = MIMEMultipart('alternative')
+	msg.attach(attachment)
+	msg['Subject'] = 'Dice results - ' + filename
+	msg['From'] = config.ADDRESS
+	msg['To'] = ",".join(addresses)
+
+	mailserver.sendmail(config.ADDRESS, addresses, msg.as_string())
+	mailserver.quit()
+	print("Emails sent.")
 
 def getGameDirectory():
 	print("")
