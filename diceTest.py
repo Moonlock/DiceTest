@@ -367,45 +367,68 @@ def saveResults():
 def emailResults():
 	try:
 		tryEmailResults()
-	except socket.gaierror, smtplib.SMTPServerDisconnected:
+	except (socket.gaierror, smtplib.SMTPServerDisconnected):
 		print("No internets.")
 
 		response = input("Try again? ").lower()
 		while not (response == 'n' or response == 'no'):
 			if response == 'y' or response == 'yes':
 				emailResults()
+				break
 			response = input("Try again? [y/n] ").lower()
 
 def tryEmailResults():
-	with smtplib.SMTP(config.HOST, 587) as mailserver:
-		mailserver.ehlo()
-		mailserver.starttls()
-		mailserver.ehlo()
-		mailserver.login(config.ADDRESS, config.PASSWORD)
+	mailserver = smtplib.SMTP(config.HOST, 587, timeout=5)
+	mailserver.ehlo()
+	mailserver.starttls()
+	mailserver.ehlo()
+	mailserver.login(config.ADDRESS, config.PASSWORD)
+
+	addresses = getEmailAddresses()
+	gameName = filename.split("/")[-1]
 	
-		addresses = []
+	fp = file(filename)
+	data = fp.read()
+	attachment = MIMEText(data)
+	attachment.add_header('Content-Disposition', 'attachment', filename=gameName)
+	fp.close()
 
-		print("Enter email addresses (blank line to end):")
+	msg = MIMEMultipart('alternative')
+	msg.attach(attachment)
+	msg['Subject'] = 'Dice results - ' + gameName
+	msg['From'] = config.ADDRESS
+	msg['To'] = ",".join(addresses)
+
+	mailserver.sendmail(config.ADDRESS, addresses, msg.as_string())
+	mailserver.close()
+	print("Emails sent.")
+
+def getEmailAddresses():
+	print("Enter email addresses (blank line to end):")
+	f = file('emails.txt', 'r')
+	emails = json.load(f)
+	
+	addresses = []
+	
+	for player in env.players:
+		if player.name in emails:
+			print emails[player.name]
+			addresses.append(emails[player.name])
+			
+	addresses.extend(promptForAddresses())
+	return addresses
+			
+	
+def promptForAddresses():
+	addresses = []
+
+	response = input(" > ")
+	while response:
+		addresses.append(response)
 		response = input(" > ")
-		while response:
-			addresses.append(response)
-			response = input(" > ")
-
-		fp = file(filename)
-		data = fp.read()
-		attachment = MIMEText(data)
-		attachment.add_header('Content-Disposition', 'attachment', filename=filename)
-		fp.close()
-
-		msg = MIMEMultipart('alternative')
-		msg.attach(attachment)
-		msg['Subject'] = 'Dice results - ' + filename
-		msg['From'] = config.ADDRESS
-		msg['To'] = ",".join(addresses)
-
-		mailserver.sendmail(config.ADDRESS, addresses, msg.as_string())
-		print("Emails sent.")
-
+		
+	return addresses
+	
 def getGameDirectory():
 	print("")
 
