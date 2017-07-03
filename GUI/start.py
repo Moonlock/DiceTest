@@ -1,63 +1,70 @@
 #! /usr/bin/python
 
 import Tkinter as tk
-import newGame
+from main import Main
+from menu import MainMenu
+from newGame import NewGame
 
-TITLE_FONT = ("Utopia", 60)
-SUBTITLE_FONT = ("Helvetica", 30)
-TEXT_FONT = ("Helvetica", 20)
 
-class App:
-
-	def __init__(self, master):
-
-		self.master = master
-		
-		self.frame = tk.Frame(master)
-		self.frame.pack()
-		
-		tk.Label(self.frame, text="DICE TESTER", font=TITLE_FONT, height=2
-				).pack(side="top")
-# 		label.bind("<Button-1>",lambda e:e.widget.quit())
-			
-		tk.Button(self.frame, text="New", command=self.newGame, font=TEXT_FONT, width=10
-				).pack(side="top", pady=10)
-
-		tk.Button(self.frame, text="Load", command=self.toggle, font=TEXT_FONT, width=10
-				).pack(side="top", pady=10)
-				
-		tk.Button(self.frame, text="Quit", command=exit, font=TEXT_FONT, width=10
-				).pack(side="top", pady=10)
-			
-	def newGame(self):
-		self.frame.destroy()
-
-		self = newGame.App(self.master)
-# 		self.frame = tk.Frame(self.master)
-# 		self.frame.pack()
-# 		tk.Label(self.frame, text="DICE TESTER", font=TITLE_FONT, height=2
-# 				).pack(side="top")
-# 				
-# 		tk.Button(self.frame, text="New", command=self.master.quit, font=TEXT_FONT, width=10
-# 				).pack(side="top", pady=10)
-				
-	def toggle(self):
-		print(str(root.winfo_height()) + "x" + str(root.winfo_width()))
-
+class DiceTestApp(tk.Tk):
 	
-root = tk.Tk()
-root.geometry("%dx%d+0+0" % (root.winfo_screenwidth(), root.winfo_screenheight()))
-# root.attributes('-fullscreen', True)
-windowWidth = root.winfo_width()
-windowHeight = root.winfo_height()
-
-# root.attributes('-fullscreen', True)
-
-# root.overrideredirect(1)
-# root.geometry("%dx%d+0+0" % (config.WIDTH, config.HEIGHT))
-# root.focus_set() # <-- move focus to this widget
-# root.bind("<Escape>", root.attributes('-fullscreen', False))
-
-app = App(root)
-
-root.mainloop()
+	class Player:
+		def __init__(self, name, email):
+			self.name = name
+			self.email = email
+			
+	def __init__(self, *args, **kwargs):
+		
+		tk.Tk.__init__(self, *args, **kwargs)
+		self.geometry("%dx%d+0+0" % (self.winfo_screenwidth(), self.winfo_screenheight()))
+# 		self.attributes('-fullscreen', True)
+		
+		self.players = []
+		self._firstPlayer = None
+		self._lastplayer = None
+		
+		self.after(100, lambda: self._setup())
+		
+	def addPlayer(self, name, email):
+		newPlayer = self.Player(name, email)
+		
+		if not self.players:
+			self._firstPlayer = newPlayer
+		else:
+			self._lastplayer.next = newPlayer
+			
+		newPlayer.next = self._firstPlayer
+		self._lastplayer = newPlayer
+		self.players.append(newPlayer)
+		
+	def start(self):
+		self.frames["Main"].start()
+		
+	def _setup(self):
+		self.HEIGHT = self.winfo_height()
+		self.WIDTH = self.winfo_width()
+		
+		container = tk.Frame(self);
+		container.pack(side="top", fill="both", expand=True)
+		container.grid_rowconfigure(0, weight=1)
+		container.grid_columnconfigure(0, weight=1)
+		
+		frames = []
+		frames.append({"class": MainMenu, "name":"MainMenu"})
+		frames.append({"class": NewGame, "name":"NewGame"})
+		frames.append({"class": Main, "name":"Main"})
+		
+		self.frames = {}
+		for f in frames:
+			frame = f["class"](container, self)
+			self.frames[f["name"]] = frame
+			frame.grid(row=0, column=0, sticky="nesw")
+		
+		self.showFrame("MainMenu")
+		
+	def showFrame(self, name):
+		frame = self.frames[name]
+		frame.tkraise()
+		
+app = DiceTestApp()
+app.mainloop()

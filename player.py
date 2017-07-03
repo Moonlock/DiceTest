@@ -2,8 +2,9 @@ from dice import DiceSet
 
 class Player:
 
-	def __init__(self, name):
+	def __init__(self, name, email):
 		self.name = name
+		self.email = email
 		self.dice = DiceSet()
 
 	@classmethod
@@ -21,16 +22,16 @@ class Player:
 	def addRoll(self, red, yellow):
 		self.dice.addRoll(red, yellow)
 
-	def displayCombined(self):
-		print("    " + self.name + ":")
-		self.dice.displayCombined()
-
-	def displaySeparately(self):
-		print("\t\t" + self.name + ":")
-		self.dice.displaySeparately()
-
-	def graphResults(self):
-		self.dice.graphResults("Rolls For " + self.name)
+# 	def displayCombined(self):
+# 		print("    " + self.name + ":")
+# 		self.dice.displayCombined()
+# 
+# 	def displaySeparately(self):
+# 		print("\t\t" + self.name + ":")
+# 		self.dice.displaySeparately()
+# 
+# 	def graphResults(self):
+# 		self.dice.graphResults("Rolls For " + self.name)
 
 	def testDice(self):
 		print("\t\t" + self.name + ":")
