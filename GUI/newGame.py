@@ -1,5 +1,3 @@
-#! /usr/bin/python
-
 import json
 import os
 
@@ -59,7 +57,7 @@ class NewGame(tk.Frame):
 		self.diceList = tk.Listbox(diceFrame, height=10, width=40, font=INPUT_FONT, exportselection=False)
 		self.diceList.pack(side="top", pady=(0, self.controller.HEIGHT/8))
 		
-		options = os.listdir("../data")
+		options = os.listdir("data")
 		for option in options:
 			self.diceList.insert(tk.END, option)
 			
@@ -104,7 +102,7 @@ class NewGame(tk.Frame):
 		playerList.bind('<Double-Button-1>', self.addPlayer)
 		playerList.grid(row=1, column=0, columnspan=2, pady=(0,40))
 		
-		players = json.load(file("../players.txt"))
+		players = json.load(file("players.txt"))
 		for player in players.keys():
 			playerList.insert(tk.END, player)
 		

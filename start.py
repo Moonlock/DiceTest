@@ -1,23 +1,21 @@
 #! /usr/bin/python
 
+import tkMessageBox
+
+from GUI.main import Main
+from GUI.menu import MainMenu
+from GUI.newGame import NewGame
 import Tkinter as tk
-from main import Main
-from menu import MainMenu
-from newGame import NewGame
+from player import Player
 
 
 class DiceTestApp(tk.Tk):
 	
-	class Player:
-		def __init__(self, name, email):
-			self.name = name
-			self.email = email
-			
 	def __init__(self, *args, **kwargs):
 		
 		tk.Tk.__init__(self, *args, **kwargs)
-		self.geometry("%dx%d+0+0" % (self.winfo_screenwidth(), self.winfo_screenheight()))
-# 		self.attributes('-fullscreen', True)
+# 		self.geometry("%dx%d+0+0" % (self.winfo_screenwidth(), self.winfo_screenheight()))
+		self.attributes('-fullscreen', True)
 		
 		self.players = []
 		self._firstPlayer = None
@@ -26,7 +24,7 @@ class DiceTestApp(tk.Tk):
 		self.after(100, lambda: self._setup())
 		
 	def addPlayer(self, name, email):
-		newPlayer = self.Player(name, email)
+		newPlayer = Player(name, email)
 		
 		if not self.players:
 			self._firstPlayer = newPlayer
@@ -41,6 +39,12 @@ class DiceTestApp(tk.Tk):
 		self.frames["Main"].start()
 		
 	def _setup(self):
+		
+		response = tkMessageBox.askyesno("Prevent Yakov", "Are you Yakov?")
+		if response: exit()
+		response = tkMessageBox.askyesno("Prevent Yakov", "Are you lying?")
+		if response: exit()
+		
 		self.HEIGHT = self.winfo_height()
 		self.WIDTH = self.winfo_width()
 		

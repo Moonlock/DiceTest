@@ -9,7 +9,7 @@ class Player:
 
 	@classmethod
 	def loadFromDict(cls, data):
-		player = cls(data['name'])
+		player = cls(data['name'], data['email'])
 		player.dice = DiceSet.loadFromDict(data['dice'])
 		return player
 
@@ -21,19 +21,13 @@ class Player:
 
 	def addRoll(self, red, yellow):
 		self.dice.addRoll(red, yellow)
-
-# 	def displayCombined(self):
-# 		print("    " + self.name + ":")
-# 		self.dice.displayCombined()
-# 
-# 	def displaySeparately(self):
-# 		print("\t\t" + self.name + ":")
-# 		self.dice.displaySeparately()
-# 
-# 	def graphResults(self):
-# 		self.dice.graphResults("Rolls For " + self.name)
+		
+	def getRolls(self):
+		return self.dice.getRolls()
+	
+	def getPercentages(self, numRolls=None):
+		return self.dice.getPercentages(numRolls)
 
 	def testDice(self):
-		print("\t\t" + self.name + ":")
-		self.dice.testDice()
+		return self.dice.testDice()
 
