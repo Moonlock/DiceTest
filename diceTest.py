@@ -405,7 +405,7 @@ def tryEmailResults():
 
 def getEmailAddresses():
 	print("Enter email addresses (blank line to end):")
-	f = file('emails.txt', 'r')
+	f = file('players.txt', 'r')
 	emails = json.load(f)
 	
 	addresses = []
