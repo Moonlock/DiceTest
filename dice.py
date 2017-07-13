@@ -1,5 +1,6 @@
-from oct2py import octave
 import numpy
+from oct2py import octave
+
 
 def getPValue(chiSquare):
 	if chiSquare <= 1.61:
@@ -23,28 +24,26 @@ def getPValue(chiSquare):
 
 class Die:
 
-	def __init__(self, name):
-		self.rolls = [0, 0, 0, 0, 0, 0]
-		self.name = name
-		self.numRolls = 0
-
-	@classmethod
-	def loadFromDict(cls, data):
-		die = cls(data['name'])
-		die.rolls = data['rolls']
-		die.numRolls = sum(die.rolls)
-		return die
-
-	def toDict(self):
-		return {'name': self.name, 'rolls': self.rolls}
-
-	def addFromDict(self, data):
-		self.rolls = numpy.add(self.rolls, data['rolls']).tolist()
+	def __init__(self, rolls=None):
+		self.rolls = rolls if rolls else numpy.zeros(6).tolist()
 		self.numRolls = sum(self.rolls)
 
-	def getChiSquare(self):
-		self.numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
+	def addRolls(self, rolls):
+		self.rolls = numpy.add(self.rolls, rolls).tolist()
+		self.numRolls = sum(self.rolls)
+		
+	def addRoll(self, roll):
+		self.rolls[roll-1] += 1
+		self.numRolls += 1
+		
+	def getAverage(self):
+		total = 0
+		for i in xrange(0, 6):
+			total += self.rolls[i] * (i+1)
+			
+		return round(float(total) / float(self.numRolls), 2)
 
+	def getChiSquare(self):
 		expected = float(self.numRolls) / 6.0
 
 		chiSquare = 0.0
@@ -53,44 +52,40 @@ class Die:
 
 		return chiSquare
 
-	def addRoll(self, roll):
-		self.rolls[roll-1] += 1
-		self.numRolls += 1
-
-	def testDie(self):
+	def testDie(self, colour):
+# 		return 
 		pValue = getPValue(self.getChiSquare())
 		if pValue[1] <= 0.05:
-			print(self.name + " - Die seems to be rigged.  " +
-				"( " + str(pValue[0]) + " > p > " + str(pValue[1]) + " )")
+			return (colour + " die seems to be rigged.\t" +
+				"( " + str(pValue[0]) + " > p > " + str(pValue[1]) + " )\n")
 		else:
-			print(self.name + " - Die does not seem to be rigged.  " +
-				"( " + str(pValue[0]) + " > p > " + str(pValue[1]) + " )")
+			return (colour + " die does not seem to be rigged.\t" +
+				"( " + str(pValue[0]) + " > p > " + str(pValue[1]) + " )\n")
 
 
 class DiceSet:
 
 	def __init__(self):
-		self.redDie = Die("RED")
-		self.yellowDie = Die("YELLOW")
-		self.rolls = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		self.redDie = Die()
+		self.yellowDie = Die()
+		self.rolls = numpy.zeros(11).tolist()
 		self.numRolls = 0
 
 	@classmethod
 	def loadFromDict(cls, data):
 		dice = DiceSet()
-		dice.redDie = Die.loadFromDict(data['redDie'])
-		dice.yellowDie = Die.loadFromDict(data['yellowDie'])
+		dice.redDie = Die(data['redDie'])
+		dice.yellowDie = Die(data['yellowDie'])
 		dice.rolls = data['rolls']
 		dice.numRolls = sum(dice.rolls)
 		return dice
 
 	def toDict(self):
-		return {'rolls': self.rolls,
-			'redDie': self.redDie.toDict(), 'yellowDie': self.yellowDie.toDict()}
+		return {'rolls': self.rolls, 'redDie': self.redDie.rolls, 'yellowDie': self.yellowDie.rolls}
 
 	def addFromDict(self, data):
-		self.redDie.addFromDict(data['redDie'])
-		self.yellowDie.addFromDict(data['yellowDie'])
+		self.redDie.addRolls(data['redDie'])
+		self.yellowDie.addRolls(data['yellowDie'])
 		self.rolls = numpy.add(self.rolls, data['rolls']).tolist()
 		self.numRolls = sum(self.rolls)
 
@@ -100,58 +95,66 @@ class DiceSet:
 
 		self.rolls[red + yellow - 2] += 1
 		self.numRolls += 1
-
-	def displayCombined(self):
-		total = 0
-		self.numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
-
-		print("")
-		for i in range(11):
-			percent = float(self.rolls[i]) / float(self.numRolls) * 100
-			percent = round(percent, 2)
-
-			print(str(i+2) + ": " + str(self.rolls[i]) + 
-				"\t" + str(percent) + " %")
-			total += (i+2) * self.rolls[i]
-
-		average = round(float(total) / float(self.numRolls), 2)
-		print("")
-		print("Average: " + str(average))
-		print("")
+		
+	def getRolls(self):
+		red = self.redDie.rolls
+		yellow = self.yellowDie.rolls
+		combined = self.rolls
+		
+		return (red, yellow, combined)
+	
+	def getPercentages(self, numRolls=None):
+		if not numRolls:
+			numRolls = self.numRolls
+			
+		red = [100*n/numRolls for n in self.redDie.rolls]
+		yellow = [100*n/numRolls for n in self.yellowDie.rolls]
+		combined = [100*n/numRolls for n in self.rolls]
+		
+		return (red, yellow, combined)
+		
+	def getAverages(self):
+		red = self.redDie.getAverage()
+		yellow = self.yellowDie.getAverage()
+		combined = red + yellow
+		
+		return (red, yellow, combined)
 
 	def displaySeparately(self):
 		rTotal = 0
 		yTotal = 0
-		self.numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
+		numRolls = self.numRolls if self.numRolls else 1	# Prevent dividing by 0
 
-		print("")
-		print("    " + self.redDie.name + "\t\t\t    " + self.yellowDie.name)
+		string = "RED:\t\t\tYELLOW:\n"
 
 		for i in range(6):
-			rPercent = round(float(self.redDie.rolls[i]) / float(self.numRolls) * 100, 2)
-			yPercent = round(float(self.yellowDie.rolls[i]) / float(self.numRolls) * 100, 2)
+			rPercent = round(float(self.redDie.rolls[i]) / float(numRolls) * 100, 2)
+			yPercent = round(float(self.yellowDie.rolls[i]) / float(numRolls) * 100, 2)
 
-			print(str(i+1) + ": " + str(self.redDie.rolls[i]) + 
+			string += (str(i+1) + ": " + str(self.redDie.rolls[i]) + 
 				"\t" + str(rPercent) + " %" +
 				"\t\t" + str(i+1) + ": " + str(self.yellowDie.rolls[i]) + 
-				"\t" + str(yPercent) + " %")
+				"\t" + str(yPercent) + " %\n")
 
 			rTotal += (i+1) * self.redDie.rolls[i]
 			yTotal += (i+1) * self.yellowDie.rolls[i]
 
-		rAverage = round(float(rTotal) / float(self.numRolls), 2)
-		yAverage = round(float(yTotal) / float(self.numRolls), 2)
-		print("")
-		print("Average: " + str(rAverage) +
-			"\t\tAverage: " + str(yAverage))
-		print("")
+		rAverage = round(float(rTotal) / float(numRolls), 2)
+		yAverage = round(float(yTotal) / float(numRolls), 2)
+		
+		string += "\n"
+		string += ("Average: " + str(rAverage) +
+			"\t\tAverage: " + str(yAverage) + "\n")
+		string += "\n"
+		
+		return string
 
 	def graphResults(self, title):
 		octave.histogram(self.redDie.rolls, self.yellowDie.rolls, self.rolls, title)
 
 	def testDice(self):
-		print("")
-		self.displaySeparately()
-		self.redDie.testDie()
-		self.yellowDie.testDie()
+		string = self.displaySeparately()
+		string += self.redDie.testDie("Red")
+		string += self.yellowDie.testDie("Yellow")
+		return string
 

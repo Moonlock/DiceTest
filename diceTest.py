@@ -9,7 +9,7 @@ import socket
 from blessings import Terminal
 from oct2py import octave
 
-import config
+from GUI import config
 from dice import DiceSet
 from player import Player
 
