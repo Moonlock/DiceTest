@@ -1,3 +1,5 @@
-octave-workspace
 *.pyc
+*.xcf
+.project
+.pydevproject
 *.txt
