@@ -7,6 +7,7 @@ import os
 import smtplib
 import socket
 
+from cycler import cycler
 from matplotlib import style
 from matplotlib import ticker
 import matplotlib
@@ -75,7 +76,6 @@ class Main(tk.Frame):
 				
 		tk.Button(titleFrame, text="Menu", font=TEXT_FONT, width=10, relief="groove", bd=2, command=lambda: self.controller.showFrame("MainMenu")
 				).place(x=20, y=20)
-
 		
 	def createInputFrame(self, leftFrame):
 		inputFrame = tk.Frame(leftFrame)
@@ -173,8 +173,11 @@ class Main(tk.Frame):
 		graphFrame = tk.Frame(frame, bd=3, relief="ridge")
 		graphFrame.grid(row=1, column=0, columnspan=2, pady=10)
 		
+		colourList = [player.colour for player in self.controller.players]
+		
 		matplotlib.rcParams.update({'font.size': 20})
 		matplotlib.rcParams.update({'axes.grid.axis': 'y'})
+		matplotlib.rcParams.update({'axes.prop_cycle': cycler('color', colourList)})
 		f = Figure(figsize=(9,7))
 		
 		self.combinedGraph = f.add_subplot(2,1,1)
@@ -239,7 +242,7 @@ class Main(tk.Frame):
 		
 	def updateCombinedGraph(self, player=None):
 		red, yellow, combined = self.getGraphData(player)
-		self.combinedGraph.bar(range(2, 13), combined, edgecolor="black", tick_label=range(2, 13))
+		self.combinedGraph.bar(range(2, 13), combined, color="blue", edgecolor="black", tick_label=range(2, 13))
 		self.redGraph.bar(range(1, 7), red, color="red", edgecolor="black", tick_label=range(1, 7))
 		self.yellowGraph.bar(range(1, 7), yellow, color="yellow", edgecolor="black", tick_label=range(1, 7))
 		

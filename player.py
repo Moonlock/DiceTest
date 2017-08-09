@@ -2,9 +2,10 @@ from dice import DiceSet
 
 class Player:
 
-	def __init__(self, name, email):
+	def __init__(self, name, email, colour):
 		self.name = name
 		self.email = email
+		self.colour = colour
 		self.dice = DiceSet()
 
 	@classmethod

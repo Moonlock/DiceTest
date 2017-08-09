@@ -16,6 +16,8 @@ class NewGame(tk.Frame):
 		self.controller = controller
 		
 		self.newDice = tk.BooleanVar(value=False)
+		self.playerColour = tk.StringVar(value="Red")
+		self.playerToColourMap = {}
 		self.playerToEmailMap = {}
 		
 		self.createTitleFrame()
@@ -93,8 +95,16 @@ class NewGame(tk.Frame):
 		self.playerEmail = tk.Text(addPlayerFrame, height=1, width=40, font=INPUT_FONT)
 		self.playerEmail.grid(row=3, column=1, pady=(0, 20))
 		
+		tk.Label(addPlayerFrame, text="Colour:", font=TEXT_FONT
+				).grid(row=4, column=0, pady=(0, 20))
+		colourOptions = ["Red", "Blue", "White", "Orange", "Green", "Brown"]
+		colourMenu = tk.OptionMenu(addPlayerFrame, self.playerColour, *colourOptions)
+		colourMenu.grid(row=4, column=1, pady=(0, 20), sticky="w")
+		colourMenu.config(font=INPUT_FONT, width=12, anchor="w")
+		colourMenu['menu'].config(font=INPUT_FONT)
+		
 		tk.Button(addPlayerFrame, text="Add", font=TEXT_FONT, width=10, relief="groove", bd=2, command=self.addPlayer
-				).grid(row=4, column=1, sticky="e")
+				).grid(row=5, column=1, sticky="e")
 				
 	def createPlayerList(self, addPlayerFrame):
 		playerList = tk.Listbox(addPlayerFrame, height=10, width=40, font=INPUT_FONT, exportselection=False)
@@ -102,11 +112,9 @@ class NewGame(tk.Frame):
 		playerList.bind('<Double-Button-1>', self.addPlayer)
 		playerList.grid(row=1, column=0, columnspan=2, pady=(0,40))
 		
-		players = json.load(file("players.txt"))
-		for player in players.keys():
+		self.playerToEmailMap = json.load(file("players.txt"))
+		for player in self.playerToEmailMap.keys():
 			playerList.insert(tk.END, player)
-		
-		self.playerToEmailMap = players
 		
 	def createShowPlayersFrame(self, showPlayersFrame):
 		self.playerLabel = tk.Label(showPlayersFrame, text="Players (0):", font=TEXT_FONT)
@@ -131,18 +139,34 @@ class NewGame(tk.Frame):
 			
 	def addPlayer(self, evt=None):
 		name = getText(self.playerName)
-		if(name and not name in self.chosenPlayersList.get(0, tk.END)):
+		if(name):
+			if name in self.chosenPlayersList.get(0, tk.END):
+				self.displayError("Player already exists.")
+				return
+			
+			if self.playerColour.get() in self.playerToColourMap.values():
+				self.displayError("Cannot have two players with the same colour.")
+				return
+
 			self.chosenPlayersList.insert(tk.END, name)
 			self.updateNumPlayers()
-	
+			self.playerToEmailMap[name] = getText(self.playerEmail)
+			self.playerToColourMap[name] = self.playerColour.get()
+			
+			self.playerName.delete("1.0", tk.END)
+			self.playerEmail.delete("1.0", tk.END)
+			self.playerColour.set("Red")
+			
 	def removePlayer(self):
 		selected = getSelected(self.chosenPlayersList)
 		if selected:
 			self.chosenPlayersList.delete(selected["index"])
+			del self.playerToColourMap[selected["value"]]
 			self.updateNumPlayers()
 	
 	def clearPlayerList(self):
 		self.chosenPlayersList.delete(0, tk.END)
+		self.playerToColourMap = {}
 		self.updateNumPlayers()
 	
 	def selectPlayer(self, evt):
@@ -172,9 +196,9 @@ class NewGame(tk.Frame):
 		if self.newDice.get():
 			diceName = getText(self.diceName)
 			if not diceName:
-				self.errorMessage.config(text="Please enter a dice name.")
+				self.displayError("Please enter a dice name.")
 			if os.path.exists("data/" + diceName):
-				self.errorMessage.config(text="Dice name already exists.")
+				self.displayError("Dice name already exists.")
 				return None
 			os.mkdir('data/' + diceName)
 		else:
@@ -182,18 +206,27 @@ class NewGame(tk.Frame):
 			if selected:
 				diceName = selected["value"]
 			else:
-				self.errorMessage.config(text="No dice selected.")
+				self.displayError("No dice selected.")
 				return None
 			
 		return diceName
+	
+	def displayError(self, msg):
+		self.errorMessage.config(text=msg)
+		self.errorMessage.after(5000, self.clearError)
+		
+	def clearError(self):
+		self.errorMessage.config(text="")
 			
 	def start(self, diceName):
 		self.controller.diceName = diceName
 		for i in xrange(0, self.chosenPlayersList.size()):
 			name = self.chosenPlayersList.get(i)
 			email = self.playerToEmailMap.get(name)
-			self.controller.addPlayer(name, email)
+			colour = self.playerToColourMap.get(name)
+			self.controller.addPlayer(name, email, colour)
 			
+		json.dump(self.playerToEmailMap, file("players.txt", 'w'))
 		self.controller.start()
 		self.controller.showFrame('Main')
 	
@@ -207,4 +240,3 @@ def getSelected(listbox):
 		value = listbox.get(index)
 		return {"index": index, "value": value}
 	return None
-

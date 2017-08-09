@@ -23,8 +23,8 @@ class DiceTestApp(tk.Tk):
 		
 		self.after(100, lambda: self._setup())
 		
-	def addPlayer(self, name, email):
-		newPlayer = Player(name, email)
+	def addPlayer(self, name, email, colour):
+		newPlayer = Player(name, email, colour)
 		
 		if not self.players:
 			self._firstPlayer = newPlayer
