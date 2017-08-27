@@ -258,8 +258,8 @@ class Main(tk.Frame):
 			prevRed = numpy.add(prevRed, red).tolist()
 			prevYellow = numpy.add(prevYellow, yellow).tolist()
 			
-		self.combinedGraph.legend([p.name for p in self.controller.players], ncol=len(self.controller.players), 
-								loc="lower center", bbox_to_anchor=(0.5, 1))
+		self.combinedGraph.legend([p.name for p in self.controller.players], ncol=min(len(self.controller.players), 4),
+								loc="lower center", bbox_to_anchor=(0.5, 0.95))
 		
 	def getGraphData(self, player=None, numRolls=None):
 		graphDisplay = self.graphDisplay.get()
