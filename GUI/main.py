@@ -50,8 +50,12 @@ class Main(tk.Frame):
 	def toDict(self):
 		return {"dice": self.dice.toDict(), "players": [player.toDict() for player in self.controller.players]}
 
-	def start(self):
-		self.curPlayer = self.controller.players[0]
+	def startNewGame(self):
+		self.curPlayer = self.players[0]
+		
+		self.graphType = tk.StringVar(value="Combined")
+		self.graphDisplay = tk.StringVar(value="Number")
+		self.resultsType = tk.StringVar(value="All Players")
 		
 		self.createTitleFrame()
 		
@@ -59,21 +63,61 @@ class Main(tk.Frame):
 		leftFrame.pack(side="left", expand=True, fill="both", pady=(self.controller.HEIGHT/16, 0))
 		self.createInputFrame(leftFrame)
 		
+		colourList = [player.colour for player in self.players]
+		matplotlib.rcParams.update({'axes.prop_cycle': cycler('color', colourList)})
+			
+		graphOptions = ["Combined", "Separate", "Cycle Players", "----------"]
+		graphOptions.extend([p.name for p in self.controller.players])
+		
 		rightFrame = tk.Frame(self)
 		rightFrame.pack(side="left", expand=True, fill="both")
-		self.createGraphFrame(rightFrame)
+		self.createGraphFrame(rightFrame, graphOptions, 3, self.updateNewGraph)
+		
+	def startLoadGame(self):
+		self.groups = self.controller.groups
+		
+		self.graphType = tk.StringVar(value="All")
+		self.graphDisplay = tk.StringVar(value="Percent")
+		self.resultsType = tk.StringVar(value=self.groups.keys()[0])
+		
+		self.createTitleFrame(False)
 
+		resultsFrame = tk.Frame(self)
+		resultsFrame.pack(side="left")
+		
+		resultsOptions = []
+		resultsOptions.extend([groupName for groupName in self.groups])
 
-	def createTitleFrame(self):
+		resultsMenu = tk.OptionMenu(resultsFrame, self.resultsType, *resultsOptions, command=self.changeLoadResults)
+		resultsMenu.grid(row=0, column=0, columnspan=3)
+		resultsMenu.config(font=TEXT_FONT, width=12, anchor="w")
+		resultsMenu['menu'].config(font=TEXT_FONT)
+		
+		self.results = tk.Canvas(resultsFrame, relief="ridge", bd=2, width=self.controller.WIDTH*2/5, height=self.controller.HEIGHT/2)
+		self.results.grid(row=1, column=0, columnspan=3, pady=(0, 20), padx=50)
+		self.changeLoadResults(self.resultsType.get())
+
+		graphOptions = ["All", "----------"]
+		graphOptions.extend([groupName for groupName in self.groups])
+		
+		rightFrame = tk.Frame(self)
+		rightFrame.pack(side="left", expand=True, fill="both")
+		self.createGraphFrame(rightFrame, graphOptions, 1, self.updateLoadGraph)
+		
+
+	def createTitleFrame(self, newGame=True):
 		titleFrame = tk.Frame(self)
 		titleFrame.pack(side="top", fill="x", anchor="n")
 		
-		self.rollNum = tk.Label(titleFrame, text="ROLL 0", font=SUBTITLE_FONT)
-		self.rollNum.pack(side="top")
-		
-		self.turnName = tk.Label(titleFrame, text=self.curPlayer.name, font=SUBTITLE_FONT)
-		self.turnName.pack(side="top", pady=(0, self.controller.HEIGHT/32))
-				
+		if newGame:
+			self.rollNum = tk.Label(titleFrame, text="ROLL 0", font=SUBTITLE_FONT)
+			self.rollNum.pack(side="top")
+			
+			self.turnName = tk.Label(titleFrame, text=self.curPlayer.name, font=SUBTITLE_FONT)
+			self.turnName.pack(side="top", pady=(0, self.controller.HEIGHT/32))
+		else:
+			tk.Label(titleFrame, text="Compare Dice", font=SUBTITLE_FONT, height=2).pack(side="top")
+
 		tk.Button(titleFrame, text="Menu", font=TEXT_FONT, width=10, relief="groove", bd=2, command=lambda: self.controller.showFrame("MainMenu")
 				).place(x=20, y=20)
 		
@@ -148,36 +192,31 @@ class Main(tk.Frame):
 		return row
 					
 					
-	def createGraphFrame(self, rightFrame):
+	def createGraphFrame(self, rightFrame, graphOptions, dividerIndex, graphFunction):
 		graphFrame = tk.Frame(rightFrame)
 		graphFrame.pack(side="top")
 		
-		graphOptions = ["Combined", "Separate", "Cycle Players", "----------"]
-		graphOptions.extend([p.name for p in self.controller.players])
-
-		graphMenu = tk.OptionMenu(graphFrame, self.graphType, *graphOptions, command=self.updateGraph)
+		graphMenu = tk.OptionMenu(graphFrame, self.graphType, *graphOptions, command=graphFunction)
 		graphMenu.grid(row=0, column=0, columnspan=2)
 		graphMenu.config(font=TEXT_FONT, width=12, anchor="w")
 		graphMenu['menu'].config(font=TEXT_FONT)
-		graphMenu['menu'].entryconfigure(3, state="disabled")
+		graphMenu['menu'].entryconfigure(dividerIndex, state="disabled")
 		
 		self.createGraph(graphFrame)
+		graphFunction()
 
-		tk.Radiobutton(graphFrame, text="%", variable=self.graphDisplay, value="Percent", indicatoron=False, font=TEXT_FONT, width=10, offrelief="groove", bd=2, command=self.updateGraph
+		tk.Radiobutton(graphFrame, text="%", variable=self.graphDisplay, value="Percent", indicatoron=False, font=TEXT_FONT, width=10, offrelief="groove", bd=2, command=graphFunction
 				).grid(row=2, column=0)
 				
-		tk.Radiobutton(graphFrame, text="#", variable=self.graphDisplay, value="Number", indicatoron=False, font=TEXT_FONT, width=10, offrelief="groove", bd=2, command=self.updateGraph
+		tk.Radiobutton(graphFrame, text="#", variable=self.graphDisplay, value="Number", indicatoron=False, font=TEXT_FONT, width=10, offrelief="groove", bd=2, command=graphFunction
 				).grid(row=2, column=1)
 		
 	def createGraph(self, frame):
 		graphFrame = tk.Frame(frame, bd=3, relief="ridge")
 		graphFrame.grid(row=1, column=0, columnspan=2, pady=10)
 		
-		colourList = [player.colour for player in self.controller.players]
-		
 		matplotlib.rcParams.update({'font.size': 20})
 		matplotlib.rcParams.update({'axes.grid.axis': 'y'})
-		matplotlib.rcParams.update({'axes.prop_cycle': cycler('color', colourList)})
 		f = Figure(figsize=(9,7))
 		
 		self.combinedGraph = f.add_subplot(2,1,1)
@@ -187,8 +226,6 @@ class Main(tk.Frame):
 		self.canvas = FigureCanvasTkAgg(f, graphFrame)
 		self.canvas.show()
 		self.canvas.get_tk_widget().pack()
-		
-		self.updateGraph()
 		
 		
 	def submit(self):
@@ -203,53 +240,69 @@ class Main(tk.Frame):
 			self.updateAverages(self.curPlayer.tableRow, self.curPlayer.dice)
 			self.endTurn()
 			
-			self.updateGraph()
+			self.updateNewGraph()
 			
 	def updateAverages(self, row, diceSet):
 		redAvg, yellowAvg, combined = diceSet.getAverages()
 		row.red.config(text=str(redAvg))
 		row.yellow.config(text=str(yellowAvg))
 		row.combined.config(text=str(combined))
+		
+		
+	def updateNewGraph(self, val=None):
+		graphType = self.graphType.get()
+		if graphType == "Combined":
+			self.updateGraph(self.updateCombinedGraph)
+		elif graphType == "Separate":
+			self.updateGraph(self.updateSeparatedGraph)
+		elif graphType == "Cycle Players":
+			self.updateGraph(self.updateCombinedGraph, self.curPlayer)
+		else:
+			self.updateGraph(self.updateCombinedGraph, self.getPlayer(graphType))
 			
-	def updateGraph(self, val=None):
+		if self.dice.numRolls == 0:
+			self.combinedGraph.set_ylim(0, 1)
+			self.redGraph.set_ylim(0, 1)
+			self.yellowGraph.set_ylim(0, 1)
+			
+		self.canvas.draw()
+			
+	def updateLoadGraph(self, val=None):
+		graphType = self.graphType.get()
+		if graphType == "All":
+			self.updateGraph(self.updateGroupsGraph)
+		else:
+			self.updateGraph(self.updateSeparatedGraph, self.groups[graphType])
+			
+		self.canvas.draw()
+			
+	def updateGraph(self, graphFunction, *args):
 		self.combinedGraph.clear()
 		self.redGraph.clear()
 		self.yellowGraph.clear()
 		
-		graphType = self.graphType.get()
-		if graphType == "Combined":
-			self.updateCombinedGraph()
-		elif graphType == "Separate":
-			self.updateSeparatedGraph()
-		elif graphType == "Cycle Players":
-			self.updateCombinedGraph(self.curPlayer)
-		else:
-			self.updateCombinedGraph(self.getPlayer(graphType))
-			
+		graphFunction(*args)
+
 		self.redGraph.set_xlabel("Red Die")
 		self.yellowGraph.set_xlabel("Yellow Die")
 		self.combinedGraph.yaxis.set_major_locator(ticker.MaxNLocator(integer=True, nbins=5))
 		self.redGraph.yaxis.set_major_locator(ticker.MaxNLocator(integer=True, nbins=5))
 		self.yellowGraph.yaxis.set_major_locator(ticker.MaxNLocator(integer=True, nbins=5))
-		
-		if self.dice.numRolls == 0:
-			self.combinedGraph.set_ylim(0, 1)
-			self.redGraph.set_ylim(0, 1)
-			self.yellowGraph.set_ylim(0, 1)
-			self.canvas.draw()
 			
-		self.canvas.draw()
-		
 	def updateCombinedGraph(self, player=None):
 		red, yellow, combined = self.getGraphData(player)
 		self.combinedGraph.bar(range(2, 13), combined, color="blue", edgecolor="black", tick_label=range(2, 13))
 		self.redGraph.bar(range(1, 7), red, color="red", edgecolor="black", tick_label=range(1, 7))
 		self.yellowGraph.bar(range(1, 7), yellow, color="yellow", edgecolor="black", tick_label=range(1, 7))
 		
-	def updateSeparatedGraph(self):
+	def updateSeparatedGraph(self, group=None):
 		prevCombined = prevRed = prevYellow = 0
-		for player in self.controller.players:
-			red, yellow, combined = self.getGraphData(player, self.dice.numRolls)
+		
+		players = group.players if group else self.players
+		numRolls = group.dice.numRolls if group else self.dice.numRolls
+		
+		for player in players:
+			red, yellow, combined = self.getGraphData(player, numRolls)
 			
 			self.combinedGraph.bar(range(2, 13), combined, edgecolor="black", tick_label=range(2, 13), bottom=prevCombined)
 			self.redGraph.bar(range(1, 7), red, edgecolor="black", tick_label=range(1, 7), bottom=prevRed)
@@ -258,7 +311,26 @@ class Main(tk.Frame):
 			prevRed = numpy.add(prevRed, red).tolist()
 			prevYellow = numpy.add(prevYellow, yellow).tolist()
 			
-		self.combinedGraph.legend([p.name for p in self.controller.players], ncol=min(len(self.controller.players), 4),
+		self.combinedGraph.legend([p.name for p in players], ncol=min(len(players), 4),
+								loc="lower center", bbox_to_anchor=(0.5, 0.95))
+		
+	def updateGroupsGraph(self):
+		barWidth = 0.9 / len(self.groups)
+		offset = 0
+		groupNames = []
+		
+		for groupName in self.groups:
+			group = self.groups[groupName]
+			red, yellow, combined = group.getRolls() if self.graphDisplay.get() == "Number" else group.getPercentages()
+				
+			self.combinedGraph.bar(numpy.array(range(2, 13)) + offset, combined, edgecolor="black", tick_label=range(2, 13), width=barWidth)
+			self.redGraph.bar(numpy.array(range(1, 7)) + offset, red, edgecolor="black", tick_label=range(1, 7), width=barWidth)
+			self.yellowGraph.bar(numpy.array(range(1, 7)) + offset, yellow, edgecolor="black", tick_label=range(1, 7), width=barWidth)
+			offset += barWidth
+			
+			groupNames.append(groupName)
+			
+		self.combinedGraph.legend(groupNames, ncol=min(len(self.groups), 4),
 								loc="lower center", bbox_to_anchor=(0.5, 0.95))
 		
 	def getGraphData(self, player=None, numRolls=None):
@@ -289,7 +361,7 @@ class Main(tk.Frame):
 		resultsOptions = ["All Players"]
 		resultsOptions.extend([p.name for p in self.controller.players])
 		
-		resultsMenu = tk.OptionMenu(resultsFrame, self.resultsType, *resultsOptions, command=self.changeResultsType)
+		resultsMenu = tk.OptionMenu(resultsFrame, self.resultsType, *resultsOptions, command=self.changeNewResults)
 		resultsMenu.grid(row=0, column=0, columnspan=3)
 		resultsMenu.config(font=TEXT_FONT, width=12, anchor="w")
 		resultsMenu['menu'].config(font=TEXT_FONT)
@@ -311,7 +383,7 @@ class Main(tk.Frame):
 		self.errorMessage.grid(row=3, column=0, columnspan=3)
 				
 				
-	def changeResultsType(self, val):
+	def changeNewResults(self, val):
 		self.results.delete("all")
 		if val == "All Players":
 			resultsText = self.dice.testDice()
@@ -319,6 +391,11 @@ class Main(tk.Frame):
 			player = self.getPlayer(val)
 			resultsText = player.testDice()
 		
+		self.results.create_text((self.controller.WIDTH/5,0), anchor="n", font=TEXT_FONT, text=resultsText)
+		
+	def changeLoadResults(self, val):
+		self.results.delete("all")
+		resultsText = self.groups[val].testDice()
 		self.results.create_text((self.controller.WIDTH/5,0), anchor="n", font=TEXT_FONT, text=resultsText)
 	
 	def save(self):

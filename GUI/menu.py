@@ -19,7 +19,7 @@ class MainMenu(tk.Frame):
 		tk.Button(self.frame, text="New", font=TEXT_FONT, width=10, relief="groove", bd=2, command=lambda: controller.showFrame('NewGame')
 				).pack(side="top", pady=10)
 
-		tk.Button(self.frame, text="Load", font=TEXT_FONT, width=10, relief="groove", bd=2, state="disabled", command=lambda: controller.showFrame('LoadGame')
+		tk.Button(self.frame, text="Load", font=TEXT_FONT, width=10, relief="groove", bd=2, command=lambda: controller.showFrame('Load')
 				).pack(side="top", pady=10)
 				
 		tk.Button(self.frame, text="Quit", font=TEXT_FONT, width=10, relief="groove", bd=2, command=exit

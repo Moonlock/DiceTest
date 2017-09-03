@@ -2,7 +2,7 @@ from dice import DiceSet
 
 class Player:
 
-	def __init__(self, name, email, colour):
+	def __init__(self, name, email=None, colour=None):
 		self.name = name
 		self.email = email
 		self.colour = colour
@@ -10,7 +10,11 @@ class Player:
 
 	@classmethod
 	def loadFromDict(cls, data):
-		player = cls(data['name'], data['email'])
+		if 'email' in data:
+			player = cls(data['name'], data['email'])
+		else:
+			player = cls(data['name'])
+		
 		player.dice = DiceSet.loadFromDict(data['dice'])
 		return player
 

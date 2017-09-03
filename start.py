@@ -2,14 +2,48 @@
 
 import tkMessageBox
 
+from GUI.load import Load
 from GUI.main import Main
 from GUI.menu import MainMenu
 from GUI.newGame import NewGame
 import Tkinter as tk
+from dice import DiceSet
 from player import Player
 
 
 class DiceTestApp(tk.Tk):
+	
+	class ComparisonGroup:
+
+		def __init__(self, name):
+			self.name = name
+			self.dice = DiceSet()
+			self.players = []
+			
+		def addDice(self, data):
+			self.dice.addFromDict(data['dice'])
+			
+			for playerData in data['players']:
+				groupPlayer = self.getPlayer(playerData['name'])
+				if groupPlayer:
+					groupPlayer.addFromDict(playerData)
+				else:
+					self.players.append(Player.loadFromDict(playerData))
+					
+		def getPlayer(self, name):
+			for player in self.players:
+				if player.name == name:
+					return player
+			return None
+		
+		def getRolls(self):
+			return self.dice.getRolls()
+		
+		def getPercentages(self):
+			return self.dice.getPercentages()
+		
+		def testDice(self):
+			return self.dice.testDice()
 	
 	def __init__(self, *args, **kwargs):
 		
@@ -20,6 +54,8 @@ class DiceTestApp(tk.Tk):
 		self.players = []
 		self._firstPlayer = None
 		self._lastplayer = None
+		
+		self.groups = {}
 		
 		self.after(100, lambda: self._setup())
 		
@@ -35,8 +71,18 @@ class DiceTestApp(tk.Tk):
 		self._lastplayer = newPlayer
 		self.players.append(newPlayer)
 		
-	def start(self):
-		self.frames["Main"].start()
+	def addGroup(self, name):
+		self.groups[name] = self.ComparisonGroup(name)
+		
+	def addToGroup(self, groupName, diceData):
+		self.groups[groupName].addDice(diceData)
+		
+
+	def startNewGame(self):
+		self.frames["Main"].startNewGame()
+		
+	def startLoadGame(self):
+		self.frames["Main"].startLoadGame()
 		
 	def _setup(self):
 		
@@ -56,6 +102,7 @@ class DiceTestApp(tk.Tk):
 		frames = []
 		frames.append({"class": MainMenu, "name":"MainMenu"})
 		frames.append({"class": NewGame, "name":"NewGame"})
+		frames.append({"class": Load, "name": "Load"})
 		frames.append({"class": Main, "name":"Main"})
 		
 		self.frames = {}

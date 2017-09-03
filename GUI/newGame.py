@@ -227,7 +227,7 @@ class NewGame(tk.Frame):
 			self.controller.addPlayer(name, email, colour)
 			
 		json.dump(self.playerToEmailMap, file("players.txt", 'w'))
-		self.controller.start()
+		self.controller.startNewGame()
 		self.controller.showFrame('Main')
 	
 
